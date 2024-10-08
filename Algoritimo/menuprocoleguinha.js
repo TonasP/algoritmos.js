@@ -1,4 +1,5 @@
 const prompt = require("prompt-sync")();
+let ordem= []
 let contador= 0
 let pizzacalabresa = ["calabresa", "oregano", "mussarela"]
 function receita(){
@@ -10,14 +11,17 @@ function receita(){
     console.log ("  2. Adicionar item a receita")
     console.log ("  3. Remover item da receita")
     console.log ("  4. Ver quantos items vão na receita")
-    console.log ("  5. Fechar o livro")
+    console.log ("  5. Quantidade de fatias da pizza")
+    console.log ("  6. Fechar o livro")
     console.log ("-------------------------------------------")
     let escolha = parseInt(prompt("Por favor, escolha uma das opções acima"))
     switch (escolha){
         case 1:
+            ordem=pizzacalabresa.sort()
             console.log("------------------------")
-            for (let i=0; i<pizzacalabresa.length; i++){
-                console.log (pizzacalabresa[i])}
+            console.log("Lista de ingredientes (em ordem alfabetica)")
+            for (let i=0; i<ordem.length; i++){
+                console.log (ordem[i])}
             console.log ("-----------------------")    
             return receita()
             
@@ -60,6 +64,13 @@ function receita(){
         return receita()
 
         case 5:
+            console.log ("Quantidade de fatias correspondente ao tamanho:")
+            console.log ("Pizza Pequena: 8 fatias")
+            console.log ("Pizza Média: 12 fatias")
+            console.log ("Pizza Grande: 16 fatias")
+            console.log ("Pizza Familia: 20 fatias")
+            return receita()
+        case 6:
             console.log ("Você decidiu fechar o livro, tenha um bom dia caro cozinheiro!!")        
         break 
         default:
