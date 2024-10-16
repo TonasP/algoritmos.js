@@ -1,4 +1,6 @@
 const prompt = require("prompt-sync")();
+let lista =["calabresa", "oregano"]
+
 let ordem= []
 let contador= 0
 let pizzacalabresa = ["calabresa", "oregano", "mussarela"]
@@ -14,7 +16,7 @@ function receita(){
     console.log ("  5. Quantidade de fatias da pizza")
     console.log ("  6. Fechar o livro")
     console.log ("-------------------------------------------")
-    let escolha = parseInt(prompt("Por favor, escolha uma das opções acima"))
+    let escolha = parseInt(prompt("Por favor, escolha uma das opções acima: "))
     switch (escolha){
         case 1:
             ordem=pizzacalabresa.sort()
@@ -23,20 +25,33 @@ function receita(){
             for (let i=0; i<ordem.length; i++){
                 console.log (ordem[i])}
             console.log ("-----------------------")    
+            if (pizzacalabresa.length===0){
+                console.log ("A lista de ingredientes está vazia!")
+            }
             return receita()
             
         
-        case 2:
+        case 2: 
+        if (pizzacalabresa.length==0){
+            let adicionar = (prompt ("Digite o item que deseja adicionar, pressione 0 caso queira parar: "))
+             pizzacalabresa.push(adicionar)
+        }   
          for (let i=0; i<pizzacalabresa.length; i++){
-            let adicionar = (prompt ("Digite o item que deseja adicionar, pressione 0 caso queira parar"))
+            
+            let adicionar = (prompt ("Digite o item que deseja adicionar, pressione 0 caso queira parar: "))
             let existente = pizzacalabresa.indexOf(adicionar)
-                if (existente===0){
+                if (existente!==-1 ){
                     console.log ("o item que deseja adicionar já existe!")
                     return receita()
                 }
                 if (adicionar=="0"){
                     return  receita()
-                } pizzacalabresa[pizzacalabresa.length]=adicionar}
+                } 
+                if (pizzacalabresa.indexOf(adicionar)===-1){
+                pizzacalabresa[pizzacalabresa.length]=adicionar}
+         }
+                 
+                
                     break;
         case 3:
             for (let i=0; i<pizzacalabresa.length; i++){
@@ -48,11 +63,8 @@ function receita(){
                 
                     }
                     else{
-                        console.log ("O item inserido não existia, logo, não foi removido")
+                        console.log (remover, "não existe na lista, logo, não foi removido")
                     } 
-                if (remover.length==0){
-                    break
-                }
             }
         return receita()
     

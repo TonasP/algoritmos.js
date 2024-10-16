@@ -1,7 +1,7 @@
 
-let array = [12, 3, 45, 7, 22 ]
-let numm=0
-let numM= 0
+let array = [12, 3, 45, 7, 22, ]
+let numm= array[0]
+let numM= array[0]
 for (let i=0; i<array.length; i++){
    
     if ( array[i]> numM ){
