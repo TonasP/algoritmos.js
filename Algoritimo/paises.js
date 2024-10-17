@@ -52,6 +52,7 @@ function inserir(){
     let ajeitarnumero= linha.push(numero)
     let inserir= paises.push(linha)
     console.log ("O pais:|", pais, "|que possui", numero, "habitantes foi adicionado a lista!")
+    linha=[]
 
 } 
 function opções(){
