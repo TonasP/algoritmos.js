@@ -1,5 +1,4 @@
 const prompt = require("prompt-sync")();
-let linha= []
 let tamanho=0
 let nome =""
 let pergunta=""
@@ -20,15 +19,15 @@ function exibir(){
     console.table(ordenar)
 }
 function pesquisar(){
- let qproc= prompt("Qual pais deseja saber a população?")
+ let procpais= prompt("Qual pais deseja saber a população?")
  for (let i=0; i<paises.length; i++){
     for (let j=0; j<paises.length; j++){
-        if (paises[i][0]===qproc){
-            console.log ("o pais que você procurou:", qproc, "tem", paises[i][1], "habitantes")
+        if (paises[i][0]===procpais){
+            console.log ("o pais que você procurou:", procpais, "tem", paises[i][1], "habitantes")
            break
-           }
-        }         
-  }
+        }
+    }         
+ }
 }  
 function maiorp(){
     for (let i=0; i<paises.length; i++){
@@ -48,20 +47,42 @@ function maiorp(){
 function inserir(){
     let pais= prompt ("Insira o nome do seu pais")
     let numero= parseInt(prompt("Insira quantos habitantes há em seu pais"))
-    let ajeitarnome= linha.push(pais)
-    let ajeitarnumero= linha.push(numero)
-    let inserir= paises.push(linha)
-    console.log ("O pais:|", pais, "|que possui", numero, "habitantes foi adicionado a lista!")
-    linha=[]
+    let existente= paises.findIndex(item=> item[0]===pais)
+        if (existente===-1){
+            paises.push([pais, numero])
+            console.log ("O pais:|", pais, "|que possui", numero, "habitantes foi adicionado a lista!")
+            
+        }
+            
+        else {
+            console.log ("O pais já existe na lista")
+            
+        }
+            
+    } return opções()
+    
 
-} 
+
+function deletar(){
+    let paisdelet= prompt ("Qual pais deseja remover ?")
+    let indice = -1
+    for(let i=0; i<paises.length; i++){
+        if(paises[i][0] === paisdelet){
+           indice = i;
+           paises.splice(indice, 1)
+        }
+    
+    } 
+    console.log ("O pais:", paisdelet, "foi excluido do menu")
+}
 function opções(){
     console.log ("Menu de Opções")
     console.log (" 1. Pesquisar pais ")
     console.log (" 2. Exibir a tabela de paises em ordem")
     console.log (" 3. Ver qual o maior pais")
     console.log (" 4. Inserir um pais ")
-    console.log (" 5. Sair")
+    console.log (" 5. Deletar pais")
+    console.log (" 6. Sair")
     pergunta = parseInt(prompt("Qual opção deseja ?"))
 
 switch (pergunta){
@@ -78,6 +99,9 @@ switch (pergunta){
         inserir()
         return opções()
     case 5:
+        deletar()
+        return opções()
+    case 6:
         console.log("Você decidiu sair!")
         break
     default:
@@ -85,11 +109,10 @@ switch (pergunta){
         return opções()
 }
 }
-   while (pergunta!==5){
+   while (pergunta!==6){
     opções()
    }     
 
  
 
  
-
