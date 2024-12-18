@@ -13,8 +13,15 @@ const pool = new Pool({
 async function deletarcliente(){
     try{
         let id= await procurarcliente()
+        const checkquery= 'select id from "GymControl".clientes where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id|| resultcheck.rows.length <= 0  ){
+            console.log("Não é possivel deletar um cliente inexistente!")
+         }
+         else{
         const query = 'delete  from "GymControl".clientes where id = $1'
         const result = await pool.query(query,[id])
+        console.log ("Cliente deletado com sucesso!")}
     }
     catch{
         console.log("Erro ao deletar cliente!")
@@ -22,12 +29,22 @@ async function deletarcliente(){
 }
 async function atualizarcliente(){
     try{
-        let id= await  procurarcliente()
+        let id= await procurarcliente()
+        const checkquery= 'select id from "GymControl".clientes where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+        if (resultcheck.rows.length <= 0 || !id){
+            console.log ("Não é possivel acessar um cliente inexistente")
+            return
+        }
         let coluna= prompt("O que deseja atualizar?")
         let registro = prompt ("Para o que deseja atualizar?")
-        const query = 'update "GymControl".clientes set $1 =$2  where id = $3'
-        const result = pool.query(query,[coluna, registro, id])
-        console.log ("O cliente foi atualizado!")
+        if (!coluna||!registro){
+            console.log ("Não é possivel acessar ou gravar registros nulos!")
+            return
+        }else{
+        const query = `update "GymControl".clientes set ${coluna} =$1  where id = $2`
+        const result = pool.query(query,[registro, id])
+        console.log ("O cliente foi atualizado!")}
     }
     catch{
         console.log ("Erro ao atualizar o cliente")
@@ -59,12 +76,19 @@ async function cadastrarcliente(){
     try{
         let nome= prompt ("Qual o nome do cliente?")
         let cpf = prompt ("Qual o CPF do cliente?")
+        const checkquery = 'select id from "GymControl".clientes where cpf = $1'
+        const resultcheck= await pool.query(checkquery,[cpf])
+        if (resultcheck.rows.length > 0 ) {
+            console.log ("Não é possivel adicionar uma pessoa já existente!")
+            return 
+        }
         let data= prompt ("Qual a data de nascimento do cliente?")
         let plano= prompt ("Qual plano o cliente escolheu?")
         let numero = prompt ("Qual numero de celular do cliente")
         let email= prompt ("Qual o email do cliente?")
         const query = 'INSERT into "GymControl".clientes ( nome, cpf, data_nascimento, plano_id, numero_celular, email) values ($1, $2, $3, $4, $5, $6)'
         const result = await pool.query(query,[nome, cpf, data, plano, numero, email])
+        console.table (result.rows)
         console.log ("Cliente inserido com sucesso!!")
     }catch{
         console.log("Erro Inesperado!")
@@ -75,8 +99,15 @@ async function cadastrarcliente(){
 async function deletarfuncionário(){
     try{
         let id= await procurarfuncionario()
+        const checkquery= 'select id from "GymControl".funcionarios where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id|| resultcheck.rows.length <=0){
+            console.log ("Funcionário inexistente!")
+            return
+         }
         const query = 'delete  from "GymControl".funcionarios where id = $1'
         const result = await pool.query(query,[id])
+        console.log("Funcionário removido com sucesso!")
     }
     catch{
         console.log("Erro ao deletar funcionário")
@@ -108,12 +139,19 @@ async function cadastrarfuncionario(){
     try{
        let nome = prompt ("Insiral o nome do funcionário")
        let cpf= prompt ("Insira o CPF do funcionário") 
+       const checkquery = 'select id from "GymControl".funcionarios where cpf = $1'
+        const resultcheck= await pool.query(checkquery,[cpf])
+        if (resultcheck.rows.length > 0 ) {
+            console.log ("Não é possivel adicionar uma pessoa já existente!")
+            return 
+        }
        let data= prompt ("Insira a data de nascimento do funcionário")
        let funcao= prompt ("Qual a função do funcionário?")
        let numero= prompt ("Insira o numero de celular do funcionário")
        let email= prompt ("Insira o email do funcionário")
        const query = 'INSERT INTO "GymControl".funcionarios(nome, cpf, data_nascimento, funcao, numero_celular, email) VALUES ( $1, $2, $3, $4, $5, $6);'
        const result = await pool.query(query,[nome, cpf, data, funcao, numero, email])
+       console.table (result.rows) 
        console.log ("Funcionário cadastrado com sucesso")
 
     }catch {
@@ -123,10 +161,19 @@ async function cadastrarfuncionario(){
 async function atualizarfuncionario(){
     try{
         let id= await procurarfuncionario() 
+        const checkquery= 'select id from "GymControl".funcionarios where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id || resultcheck.rows.length <=0){
+            console.log ("Funcionário inexistente!")
+            return
+         }
         let coluna= prompt("O que deseja atualizar?")
         let registro = prompt ("Para o que deseja atualizar?")
-        const query = 'update "GymControl".funcionarios set $1=$2 where id=$3'
-        const result = pool.query(query,[coluna, registro, id])
+        if (!coluna || !registro){
+            console.log ("Não é possivel acessar ou gravar registros invalidos!")
+        }
+        const query = `update "GymControl".funcionarios set ${coluna}=$1 where id=$2`
+        const result = pool.query(query,[registro, id])
         console.log ("O funcionário foi atualizado!")
     }
     catch{
@@ -138,8 +185,15 @@ async function atualizarfuncionario(){
 async function deletarservico(){
     try{
         let id= await procurarservico()
-        const query = 'delete  from "GymControl".servico where id = $1'
+        const checkquery= 'select id from "GymControl".servicos where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id || resultcheck.rows.length <=0){
+            console.log ("Serviço inexistente!")
+            return
+         }
+        const query = 'delete  from "GymControl".servicos where id = $1'
         const result = await pool.query(query,[id])
+        console.log ("Serviço deletado com sucesso!")
     }
     catch{
         console.log("Erro ao deletar o serviço")
@@ -148,10 +202,19 @@ async function deletarservico(){
 async function atualizarservico(){
     try{
         let id= await procurarservico()
+        const checkquery= 'select id from "GymControl".servicos where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id || resultcheck.rows.length <=0){
+            console.log ("Serviço inexistente!")
+            return
+         }
         let coluna= prompt("O que deseja atualizar?")
         let registro = prompt ("Para o que deseja atualizar?")
-        const query = 'update "GymControl".servicos set $1=$2 where id=$3'
-        const result = pool.query(query,[coluna, registro, id])
+        if (!coluna || !registro){
+            console.log ("Não é possivel acessar ou gravar registros invalidos!")
+        }
+        const query = `update "GymControl".servicos set ${coluna} =$1 where id = $2`
+        const result = pool.query(query,[registro, id])
         console.log ("O serviço foi atualizado!")
     }
     catch {
@@ -170,10 +233,10 @@ async function vsservicos(){
 }
 async function procurarservico(){
     try{
-        let nome= await procurarcliente()
-        const query = 'select  servicos.* from "GymControl".servicos join "GymControl".clientes on servicos.id_cliente = clientes.id where clientes.nome = $1'
-        const result = await pool.query(query,[nome])
-        console.log (result.rows)
+        let id= await procurarcliente()
+        const query = 'select  servicos.* from "GymControl".servicos join "GymControl".clientes on servicos.id_cliente = clientes.id where clientes.id = $1'
+        const result = await pool.query(query,[id])
+        console.table (result.rows)
         return result.rows[0].id
     }
     catch{
@@ -189,6 +252,8 @@ async function cadastrarservico(){
         let valor = parseInt(prompt ("Qual o valor do serviço"))
         const query = 'INSERT INTO "GymControl".servicos( "id_funcionário", id_cliente, tipo_servico, data_servico, valor) VALUES ( $1, $2, $3, $4, $5)'
         const result = await pool.query(query,[cliente, funcionario, tipo, data, valor])
+        console.table (result.rows)
+        console.log ("Serviço cadastrado com sucesso!")
 
     }catch {
         console.log ("Erro ao cadastrar serviço!")
@@ -198,8 +263,15 @@ async function cadastrarservico(){
 async function deletarpagamento(){
     try{
         let id= await procurarpagamento()
+        const checkquery= 'select id from "GymControl".pagamentos where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id || resultcheck.rows.length <=0){
+            console.log ("Pagamento inexistente!")
+            return
+         }
         const query = 'delete  from "GymControl".pagamentos where id = $1'
         const result = await pool.query(query,[id])
+        console.log ("Pagamento deletado com sucesso!")
     }
     catch{
         console.log("Erro ao deletar pagamento")
@@ -208,10 +280,20 @@ async function deletarpagamento(){
 async function atualizarpagamento(){
     try{
         let id= await procurarpagamento()
+        const checkquery= 'select id from "GymControl".pagamentos where id = $1'
+        const resultcheck= await pool.query(checkquery,[id])
+         if (!id || resultcheck.rows.length <=0){
+            console.log ("Pagamento inexistente!")
+            return
+         }
         let coluna= prompt("O que deseja atualizar?")
         let registro = prompt ("Para o que deseja atualizar?")
-        const query = 'update "GymControl".pagamentos set $1=$2 where id=$3'
-        const result = pool.query(query,[coluna, registro, id])
+        if (!coluna || !registro){
+            console.log ("Não é possivel acessar ou gravar registros invalidos!")
+        }
+        const query = `update "GymControl".pagamentos set ${coluna}=$1 where id=$2`
+        const result = pool.query(query,[registro, id])
+        console.table (result.rows)
         console.log ("O pagamento foi atualizado!")
     }
     catch{
@@ -243,10 +325,25 @@ async function procurarpagamento(){
 async function adicionarpagamento(){
     try{
         let servico= await procurarservico()
+        const checkquery= 'select id from "GymControl".servicos where id = $1'
+        const resultcheck= await pool.query(checkquery,[servico])
+         if (!servico || resultcheck.rows.length <=0){
+            console.log ("Serviço inexistente!")
+            return
+         }
         let valor= prompt ("Insira o valor total do(s) serviço")
+         if (!valor){
+            console.log ("Valor inválido!")
+            return
+         }
         let pagamento = prompt ("Qual a forma de pagamento?")
+         if (!pagamento){
+            console.log ("Forma de pagamento inválida!")
+            return
+         }
         const query = 'INSERT INTO "GymControl".pagamentos( id_servico, valor_total, forma_pagamento) VALUES ( $1, $2, $3)'
         const result = await pool.query(query,[servico, valor, pagamento])
+        console.table (result.rows)
         console.log ("Pagamento adicionado!!")
     }
     catch{
@@ -289,6 +386,9 @@ async function deletar(){
         case 5:
             console.log ("Retornando ao menu principal")
             return
+        default:
+            console.log ("Opção inválida")
+            return deletar()
     }
 
 }
@@ -351,6 +451,12 @@ async function atualizar(){
         case 4: 
             await atualizarpagamento()
             return atualizar()
+        case 5:
+            console.log("Retornando ao menu principal!")
+            return  
+        default: 
+            console.log ("Opção invalida!")
+            return atualizar()    
     }
 }
 
@@ -368,7 +474,7 @@ switch (opcao) {
         await cadastrarcliente()
         return cadastrar()
     case 2:     
-        await cadastrarfuncionario
+        await cadastrarfuncionario()
         return cadastrar()
       
     case 3:
@@ -385,6 +491,7 @@ switch (opcao) {
         
     default:
         console.log("Opção inválida");
+        return cadastrar()
 }
 }
 
@@ -416,6 +523,7 @@ switch (opcao) {
         return
     default:
         console.log("Opção inválida");
+        return procurar()
 }
 }
 
