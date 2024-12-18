@@ -12,10 +12,10 @@ const pool = new Pool({
 // Funções do Cliente
 async function deletarcliente(){
     try{
-        let id= await procurarcliente()
+        let id= await procurarcliente(false)
         const checkquery= 'select id from "GymControl".clientes where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
-         if (!id|| resultcheck.rows.length <= 0  ){
+         if (!id|| resultcheck.rows.length <= 0  ){  
             console.log("Não é possivel deletar um cliente inexistente!")
          }
          else{
@@ -29,7 +29,7 @@ async function deletarcliente(){
 }
 async function atualizarcliente(){
     try{
-        let id= await procurarcliente()
+        let id= await procurarcliente(false)
         const checkquery= 'select id from "GymControl".clientes where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
         if (resultcheck.rows.length <= 0 || !id){
@@ -37,13 +37,18 @@ async function atualizarcliente(){
             return
         }
         let coluna= prompt("O que deseja atualizar?")
+        const colunasPermitidas = ['nome', 'email', 'numero_celular', 'plano_id']; 
+        if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!");
+            return;
+        }    
         let registro = prompt ("Para o que deseja atualizar?")
         if (!coluna||!registro){
             console.log ("Não é possivel acessar ou gravar registros nulos!")
             return
         }else{
         const query = `update "GymControl".clientes set ${coluna} =$1  where id = $2`
-        const result = pool.query(query,[registro, id])
+        const result = await pool.query(query,[registro, id])
         console.log ("O cliente foi atualizado!")}
     }
     catch{
@@ -60,13 +65,25 @@ async function vsclientes(){
         console.log ("Erro")
     }
 }
-async function procurarcliente(){
+async function procurarcliente(mostrartabela=true, mensagemerro="Cliente não encontrado!"){
     try{
         let nome= prompt ("Qual o nome do cliente?")
-        const query = 'SELECT * from "GymControl".clientes where nome= $1 '
+            if (!nome){
+                console.log("O nome não pode ser vazio!")
+                return
+            }
+        const query = 'SELECT * from "GymControl".clientes where nome ilike $1'
         const result = await pool.query(query,[nome])
-        console.table (result.rows)
-        return result.rows[0].id
+            if (result.rows.length >0 && mostrartabela){
+              console.table (result.rows) 
+              return
+            }
+            if (result.rows.length > 0 ){
+                return result.rows[0].id
+            }
+            console.log(mensagemerro)
+            return null
+             
     }
     catch{
         console.log ("Erro ao procurar o cliente")
@@ -98,7 +115,7 @@ async function cadastrarcliente(){
 //Funções para o Funcionário
 async function deletarfuncionário(){
     try{
-        let id= await procurarfuncionario()
+        let id= await procurarfuncionario(false)
         const checkquery= 'select id from "GymControl".funcionarios where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
          if (!id|| resultcheck.rows.length <=0){
@@ -123,13 +140,26 @@ async function vsfuncionarios(){
         console.log ("Erro")
     }
 }
-async function procurarfuncionario(){
+async function procurarfuncionario(mostrartabela=true){
     try{
         let nome= prompt ("Qual o nome do funcionário ?")
-        const query = 'SELECT * from "GymControl".funcionarios where nome= $1 '
+            if (!nome){
+                console.log ("Não é possivel procurar um nome vazio!")
+                return
+            }
+        const query = 'SELECT * from "GymControl".funcionarios where nome ilike $1 '
         const result = await pool.query(query,[nome])
-        console.table (result.rows)
-        return result.rows[0].id
+            if (mostrartabela){
+                console.table (result.rows)
+                return
+            }
+            if (result.rows.length > 0){
+                 return result.rows[0].id
+            }
+            else{
+                console.log ("Funcionário não encontrado!")
+                return
+            }
     }
     catch{
         console.log ("Erro ao procurar o funcionário")
@@ -160,21 +190,28 @@ async function cadastrarfuncionario(){
 }
 async function atualizarfuncionario(){
     try{
-        let id= await procurarfuncionario() 
+        let id= await procurarfuncionario(false) 
         const checkquery= 'select id from "GymControl".funcionarios where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
-         if (!id || resultcheck.rows.length <=0){
-            console.log ("Funcionário inexistente!")
-            return
-         }
-        let coluna= prompt("O que deseja atualizar?")
-        let registro = prompt ("Para o que deseja atualizar?")
-        if (!coluna || !registro){
-            console.log ("Não é possivel acessar ou gravar registros invalidos!")
-        }
-        const query = `update "GymControl".funcionarios set ${coluna}=$1 where id=$2`
-        const result = pool.query(query,[registro, id])
-        console.log ("O funcionário foi atualizado!")
+            if (!id || resultcheck.rows.length <=0){
+                console.log ("Funcionário inexistente!")
+                return
+            }
+            let coluna= prompt("O que deseja atualizar?")
+            const colunasPermitidas = ['nome', 'email', 'numero_celular', 'funcao']; 
+            if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!");
+            return;
+            }
+            let registro = prompt ("Para o que deseja atualizar?")
+            if (!coluna || !registro){
+                console.log ("Não é possivel acessar ou gravar registros invalidos!")
+            }
+            else{
+            const query = `update "GymControl".funcionarios set ${coluna}=$1 where id=$2`
+            const result = pool.query(query,[registro, id])
+            console.log ("O funcionário foi atualizado!")
+            }
     }
     catch{
         console.log("Erro ao atualizar o funcionário")
@@ -201,7 +238,7 @@ async function deletarservico(){
 }
 async function atualizarservico(){
     try{
-        let id= await procurarservico()
+        let id= await procurarservico(false)
         const checkquery= 'select id from "GymControl".servicos where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
          if (!id || resultcheck.rows.length <=0){
@@ -209,6 +246,11 @@ async function atualizarservico(){
             return
          }
         let coluna= prompt("O que deseja atualizar?")
+        const colunasPermitidas = ['tiposervico', 'data_servico', 'valor']
+        if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!");
+            return;
+        }
         let registro = prompt ("Para o que deseja atualizar?")
         if (!coluna || !registro){
             console.log ("Não é possivel acessar ou gravar registros invalidos!")
@@ -231,13 +273,26 @@ async function vsservicos(){
         console.log ("Erro")
     }
 }
-async function procurarservico(){
+async function procurarservico(mostrartabela=true){
     try{
-        let id= await procurarcliente()
+        let id= await procurarcliente(false)
+            if (!id){
+                console.log ("Serviço inexistente!")
+                return
+            }
         const query = 'select  servicos.* from "GymControl".servicos join "GymControl".clientes on servicos.id_cliente = clientes.id where clientes.id = $1'
         const result = await pool.query(query,[id])
-        console.table (result.rows)
-        return result.rows[0].id
+            if (result.rows.length <=0){
+                console.log("O cliente não solicitou/realizou um serviço")
+                return
+            }
+            if (mostrartabela){
+                console.table (result.rows)
+                return
+            }
+            if (result.rows.length > 0){
+                return result.rows[0].id
+            }
     }
     catch{
         console.log ("Erro ao procurar o serviço")
@@ -245,11 +300,30 @@ async function procurarservico(){
 }
 async function cadastrarservico(){
     try{
-        let cliente= await procurarcliente()
-        let funcionario = await procurarfuncionario()
+        let cliente= await procurarcliente(false)
+            if (!cliente){
+                console.log("Não é possivel cadastrar um serviço cujo cliente é inexistente!")
+                return
+            }
+        let funcionario = await procurarfuncionario(false)
+            if (!funcionario){
+                console.log("Não é possivel cadastrar um serviço cujo funcionário é inexistente!")
+            }
         let tipo= prompt ("Qual o tipo do serviço?")
+            if (!tipo){
+                console.log("O campo tipo do serviço não pode ser vazio!")
+                return
+            }
         let data = prompt ("Quando ocorreu o serviço?")
+            if (!data){
+                console.log("A data do serviço não pode ser vazia")
+                return
+            }
         let valor = parseInt(prompt ("Qual o valor do serviço"))
+            if (!valor){
+                console.log ("O serviço deve ter um valor!")
+                return
+            }
         const query = 'INSERT INTO "GymControl".servicos( "id_funcionário", id_cliente, tipo_servico, data_servico, valor) VALUES ( $1, $2, $3, $4, $5)'
         const result = await pool.query(query,[cliente, funcionario, tipo, data, valor])
         console.table (result.rows)
@@ -262,7 +336,7 @@ async function cadastrarservico(){
 //Funções para os pagamentos
 async function deletarpagamento(){
     try{
-        let id= await procurarpagamento()
+        let id= await procurarpagamento(false)
         const checkquery= 'select id from "GymControl".pagamentos where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
          if (!id || resultcheck.rows.length <=0){
@@ -279,7 +353,7 @@ async function deletarpagamento(){
 }
 async function atualizarpagamento(){
     try{
-        let id= await procurarpagamento()
+        let id= await procurarpagamento(false)
         const checkquery= 'select id from "GymControl".pagamentos where id = $1'
         const resultcheck= await pool.query(checkquery,[id])
          if (!id || resultcheck.rows.length <=0){
@@ -287,6 +361,11 @@ async function atualizarpagamento(){
             return
          }
         let coluna= prompt("O que deseja atualizar?")
+        const colunasPermitidas = ['forma_pagamento']; 
+        if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!");
+            return;
+        }
         let registro = prompt ("Para o que deseja atualizar?")
         if (!coluna || !registro){
             console.log ("Não é possivel acessar ou gravar registros invalidos!")
@@ -310,13 +389,21 @@ async function vspagamentos(){
         console.log ("Erro")
     }
 }
-async function procurarpagamento(){
+async function procurarpagamento(mostrartabela=true){
     try{
-        let id= await procurarcliente()
+        let id= await procurarcliente(false)
         let query = 'select pagamentos.* from "GymControl".pagamentos join "GymControl".servicos on servicos.id = pagamentos.id_servico join "GymControl".clientes on clientes.id = servicos.id_cliente where clientes.id = $1'
         let result = await pool.query(query, [id])
-        console.table (result.rows)
-        return result.rows[0].id
+            if (mostrartabela){
+                 console.table (result.rows)
+                 return
+            }
+            if (result.rows.length > 0){
+                return result.rows[0].id
+            }
+            else{
+                console.log ("Erro ao procurar o pagamento!")
+            }
     }
     catch{
         console.log ("Erro ao procurar pagamento!")
@@ -324,7 +411,7 @@ async function procurarpagamento(){
 }
 async function adicionarpagamento(){
     try{
-        let servico= await procurarservico()
+        let servico= await procurarservico(false)
         const checkquery= 'select id from "GymControl".servicos where id = $1'
         const resultcheck= await pool.query(checkquery,[servico])
          if (!servico || resultcheck.rows.length <=0){
