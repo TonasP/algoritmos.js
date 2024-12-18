@@ -265,7 +265,7 @@ async function atualizarservico(){
 }
 async function vsservicos(){
     try{
-        const query = 'select * from "GymControl".servicos'
+        const query = 'SELECT clientes.nome AS cliente, funcionarios.nome AS funcionario, servicos.tipo_servico, servicos.data_servico FROM "GymControl".servicos JOIN "GymControl".clientes ON clientes.id = servicos.id_cliente JOIN "GymControl".funcionarios ON funcionarios.id = servicos."id_funcionário";'
         const result = await pool.query(query)
         console.table(result.rows)
     }
@@ -371,7 +371,7 @@ async function atualizarpagamento(){
             console.log ("Não é possivel acessar ou gravar registros invalidos!")
         }
         const query = `update "GymControl".pagamentos set ${coluna}=$1 where id=$2`
-        const result = pool.query(query,[registro, id])
+        const result = await pool.query(query,[registro, id])
         console.table (result.rows)
         console.log ("O pagamento foi atualizado!")
     }
@@ -381,7 +381,7 @@ async function atualizarpagamento(){
 }
 async function vspagamentos(){
     try{
-        const query = 'select * from "GymControl".pagamentos'
+        const query = 'SELECT clientes.nome AS cliente, servicos.tipo_servico AS servico, valor_total, forma_pagamento FROM "GymControl".pagamentos JOIN "GymControl".servicos ON servicos.id = pagamentos.id_servico JOIN "GymControl".clientes ON clientes.id = servicos.id_cliente;'
         const result = await pool.query(query)
         console.table(result.rows)
     }
@@ -437,6 +437,105 @@ async function adicionarpagamento(){
         console.log ("Erro ao adicionar o pagamento")
     }
 }
+
+//Funções para os agendamentos
+async function vsagendamentos(){
+    try{
+        const query = 'select agendamentos.id, cliente_id, clientes.nome as cliente, funcionario_id, funcionarios.nome as funcionario, agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.cliente_id = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.funcionario_id'
+        const result = await pool.query(query)
+        console.table(result.rows)
+    }
+
+    catch{
+        console.log("Erro ao visualizar agendamentos!")
+    }
+}
+
+async function procuraragendamento(){
+    try{
+        let id = await procurarcliente(false)
+        const query = 'select agendamentos.id,  clientes.nome as cliente,funcionarios.nome as funcionario, agendamentos.data_agendamento, agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.cliente_id = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.funcionario_id where clientes.id = $1'
+        const result = await pool.query(query,[id])
+        console.table (result.rows)
+    }
+    catch{
+        console.log ("Não foi possivel procurar o agendamento")
+    }
+}
+
+async function cadastraragendamento(){
+    try{
+        let cliente = procurarcliente(false)
+            if (!cliente){
+                console.log("Cliente inexistente!")
+                return
+            }
+        let funcionario = procurarfuncionario(false)
+            if (!funcionario){
+                console.log ("Funcionario inexistente!")
+                return
+            }
+        let datamarcada= prompt ("Para que data deseja marcar?")
+            if (!datamarcada){
+                console.log ("Data inválida!")
+                return
+            }  
+        let tipo= prompt("Que tipo de serviço deseja?")
+            if (!tipo){
+                console.log("Serviço inválido!")
+                return
+            }
+        const query = 'INSERT INTO "GymControl".agendamentos ( cliente_id, funcionario_id,  data_marcada, tipo) VALUES ( $1, $2, $3, $4);'
+        const result = await pool.query(query,[cliente, funcionario, datamarcada, tipo])
+    }
+    catch{
+        console.log("Erro ao cadastrar agendamento")
+    }
+}
+
+async function atualizaragendamento(){
+    try{
+        let cliente = await procurarcliente(false)
+            if (!cliente){
+                console.log ("Cliente não encontrado!")
+                return
+            }
+        let coluna= prompt ("O que deseja atualizar?")
+        const colunasPermitidas = ['data_marcada', 'tipo']; 
+        if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!");
+            return;
+        }
+        let registro = prompt ("Para o que deseja atualizar?")
+        const query = `update "GymControl".agendamentos set ${coluna}= $1 where cliente_id= $2`
+        const result = await pool.query(query,[registro, cliente])
+        console.log ("Agendamento atualizado com sucesso")
+
+    }
+    catch{
+        console.log("Erro ao atualizar o agendamento")
+    }
+}
+
+async function deletaragendamento(){
+    try{
+        let cliente = procurarcliente(false)
+        const checkquery= 'select id from "GymControl".agendamentos where cliente_id = $1'
+        const resultcheck= await pool.query(checkquery,[cliente])
+            if (!id || resultcheck.rows.length <=0){
+            console.log ("Agendamento inexistente!")
+            return
+            }
+        const query = 'delete  from "GymControl".agendamento where cliente_id = $1'
+        const result = await pool.query(query,[cliente])
+        console.log ("Agendamento deletado com sucesso!")
+        
+    }
+    catch{
+        console.log ("Erro ao deletar o agendamento!")
+    }
+}
+
 //Funções para os planos
 async function vsplanos(){
     try{
@@ -446,6 +545,17 @@ async function vsplanos(){
     }
     catch{
         console.log ("Erro")
+    }
+}
+
+async function inadimplentes(){
+    try{
+        const query = 'SELECT clientes.nome, servicos.tipo_servico, servicos.valor  FROM "GymControl".clientes JOIN "GymControl".servicos ON clientes.id = servicos.id_cliente LEFT JOIN "GymControl".pagamentos ON servicos.id = pagamentos.id_servico WHERE pagamentos.id_servico IS NULL;'
+        const result = await pool.query(query)
+        console.table (result.rows)
+    }
+    catch{
+        console.log ("Erro ao visualizar os inadimplentes")
     }
 }
 
@@ -487,7 +597,9 @@ async function visualizar(){
         console.log ("3- Tabela de serviços")
         console.log ("4- Tabela de planos")
         console.log ("5- Tabela de pagamentos")
-        console.log ("6- Retornar ao menu principal")
+        console.log ("6- Tabela de agendamentos")
+        console.log ("7- Tabela de inadimplentes")
+        console.log ("8- Retornar ao menu principal")
         let opcao= parseInt(prompt("Selecione a tabela que deseja acessar!"))
         switch (opcao){
             case 1:
@@ -505,7 +617,13 @@ async function visualizar(){
             case 5: 
                 await vspagamentos()
                 return visualizar()
-            case 6: 
+            case 6:
+                await vsagendamentos()
+                return visualizar()
+            case 7: 
+                await inadimplentes()
+                return visualizar()
+            case 8: 
                 console.log("Retornando ao menu principal!")
                 return
             default:
@@ -523,7 +641,8 @@ async function atualizar(){
     console.log("2- Atualizar funcionário");
     console.log("3- Atualizar serviço");
     console.log("4- Atualizar pagamento");
-    console.log("5- Retornar ao menu principal");
+    console.log("5- Atualizar agendamentos")
+    console.log("6- Retornar ao menu principal");
     let opcao = parseInt(prompt("Selecione uma das opções"))
     switch (opcao){
         case 1:
@@ -538,7 +657,10 @@ async function atualizar(){
         case 4: 
             await atualizarpagamento()
             return atualizar()
-        case 5:
+        case 5: 
+            await atualizaragendamento()
+            return atualizar()
+        case 6:
             console.log("Retornando ao menu principal!")
             return  
         default: 
@@ -553,7 +675,8 @@ async function cadastrar(){
     console.log("2- Cadastrar funcionário");
     console.log("3- Cadastrar serviço");
     console.log("4- Cadastrar pagamento");
-    console.log("5- Retornar ao menu principal");
+    console.log("5- Cadastrar agendamento")
+    console.log("6- Retornar ao menu principal");
     let opcao = parseInt(prompt("Selecione uma das opções"))
 
 switch (opcao) {
@@ -571,8 +694,11 @@ switch (opcao) {
     case 4:
         await adicionarpagamento()
         return cadastrar()
-       
-    case 5:
+    case 5: 
+        await cadastraragendamento()
+        return cadastrar()   
+    
+    case 6:
         console.log ("Retornando ao menu principal")
         return
         
@@ -588,7 +714,8 @@ console.log("1- Procurar cliente");
 console.log("2- Procurar funcionário");
 console.log("3- Procurar serviço");
 console.log("4- Procurar pagamento");
-console.log("5- Retornar ao menu principal");
+console.log("5- Procurar agendamento")
+console.log("6- Retornar ao menu principal");
 
 let opcao = parseInt(prompt("Selecione uma das opções"))
 
@@ -605,7 +732,10 @@ switch (opcao) {
     case 4:
         await procurarpagamento()
         return procurar()
-    case 5:
+    case 5: 
+        await procuraragendamento()
+        return procurar()
+    case 6:
         console.log("Retornando ao menu principal")
         return
     default:
