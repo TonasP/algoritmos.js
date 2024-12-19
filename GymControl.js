@@ -65,34 +65,56 @@ async function vsclientes(){
         console.log ("Erro")
     }
 }
-async function procurarcliente(mostrartabela=true, mensagemerro="Cliente não encontrado!"){
-    try{
-        let nome= prompt ("Qual o nome do cliente?")
-            if (!nome){
-                console.log("O nome não pode ser vazio!")
-                return
+async function procurarcliente(mostrartabela = true, mensagemerro = "Cliente não encontrado!") {
+    try {
+        let nome = prompt("Qual o nome do cliente? ")
+        if (!nome) {
+            console.log("O nome não pode ser vazio!")
+            return 
+        }
+        const checkquery = 'SELECT * FROM "GymControl".clientes WHERE nome ILIKE $1'
+        const resultcheck = await pool.query(checkquery, [nome])
+        if (resultcheck.rows.length > 1) {
+            console.log("Múltiplos clientes com este nome detectados!")
+            let cpf = prompt("Insira o CPF do cliente: ")
+            if (!cpf) {
+                console.log("CPF é necessário para identificar o cliente.")
+                return 
             }
-        const query = 'SELECT * from "GymControl".clientes where nome ilike $1'
-        const result = await pool.query(query,[nome])
-            if (result.rows.length >0 && mostrartabela){
-              console.table (result.rows) 
-              return
-            }
-            if (result.rows.length > 0 ){
+            const query = 'SELECT * FROM "GymControl".clientes WHERE cpf ILIKE $1'
+            const result = await pool.query(query, [cpf])
+            if (result.rows.length > 0) {
+                if (mostrartabela) console.table(result.rows)
                 return result.rows[0].id
             }
             console.log(mensagemerro)
-            return null
-             
-    }
-    catch{
-        console.log ("Erro ao procurar o cliente")
+            return 
+        }
+        if (resultcheck.rows.length === 1) {
+            if (mostrartabela) console.table(resultcheck.rows)
+            return resultcheck.rows[0].id
+        }
+        console.log(mensagemerro);
+        return 
+    } catch (error) {
+        console.log("Erro ao procurar o cliente")
+        return 
+        
     }
 }
+
 async function cadastrarcliente(){
     try{
         let nome= prompt ("Qual o nome do cliente?")
+            if (!nome){
+                console.log("Não é possivel cadastrar um nome em branco!")
+                return
+            }
         let cpf = prompt ("Qual o CPF do cliente?")
+            if (!cpf){
+                console.log("Não é possivel cadastrar um CPF inexistente!")
+                return
+            }   
         const checkquery = 'select id from "GymControl".clientes where cpf = $1'
         const resultcheck= await pool.query(checkquery,[cpf])
         if (resultcheck.rows.length > 0 ) {
@@ -100,12 +122,21 @@ async function cadastrarcliente(){
             return 
         }
         let data= prompt ("Qual a data de nascimento do cliente?")
-        let plano= prompt ("Qual plano o cliente escolheu?")
+            if (!data){
+                console.log("Data precisa ser válida!")
+                return
+            }
+        let plano= parseInt(prompt ("Qual plano o cliente escolheu?"))
+        const checkquery2 = 'select id from "GymControl".planos where id = $1'
+        const resultcheck2 = await pool.query(checkquery2,[plano])
+            if (resultcheck2.rows.length <=0){
+                console.log ("O plano é inválido!")
+                return
+            }
         let numero = prompt ("Qual numero de celular do cliente")
         let email= prompt ("Qual o email do cliente?")
         const query = 'INSERT into "GymControl".clientes ( nome, cpf, data_nascimento, plano_id, numero_celular, email) values ($1, $2, $3, $4, $5, $6)'
         const result = await pool.query(query,[nome, cpf, data, plano, numero, email])
-        console.table (result.rows)
         console.log ("Cliente inserido com sucesso!!")
     }catch{
         console.log("Erro Inesperado!")
@@ -140,34 +171,48 @@ async function vsfuncionarios(){
         console.log ("Erro")
     }
 }
-async function procurarfuncionario(mostrartabela=true){
-    try{
-        let nome= prompt ("Qual o nome do funcionário ?")
-            if (!nome){
-                console.log ("Não é possivel procurar um nome vazio!")
-                return
+async function procurarfuncionario(mostrartabela = true, mensagemerro = "Funcionário não encontrado!") {
+    try {
+        let nome = prompt("Qual o nome do funcionário?");
+        if (!nome) {
+            console.log("Não é possível procurar um nome vazio!")
+            return 
+        }
+        const query = 'SELECT * FROM "GymControl".funcionarios WHERE nome ILIKE $1'
+        const result = await pool.query(query, [nome])
+        if (result.rows.length > 1) {
+            console.log("Múltiplos funcionários com este nome detectados!")
+            let cpf = prompt("Insira o CPF do funcionário para identificação:")
+            if (!cpf) {
+                console.log("O CPF é necessário para identificar o funcionário.")
+                return 
             }
-        const query = 'SELECT * from "GymControl".funcionarios where nome ilike $1 '
-        const result = await pool.query(query,[nome])
-            if (mostrartabela){
-                console.table (result.rows)
-                return
+            const cpfQuery = 'SELECT * FROM "GymControl".funcionarios WHERE cpf ILIKE $1'
+            const cpfResult = await pool.query(cpfQuery, [cpf])
+            if (cpfResult.rows.length > 0) {
+                if (mostrartabela) console.table(cpfResult.rows)
+                return cpfResult.rows[0].id
             }
-            if (result.rows.length > 0){
-                 return result.rows[0].id
-            }
-            else{
-                console.log ("Funcionário não encontrado!")
-                return
-            }
-    }
-    catch{
-        console.log ("Erro ao procurar o funcionário")
+            console.log(mensagemerro)
+            return 
+        }
+        if (result.rows.length === 1) {
+            if (mostrartabela) console.table(result.rows)
+            return result.rows[0].id
+        }
+        console.log(mensagemerro)
+        return 
+    } catch (error) {
+        console.log("Erro ao procurar o funcionário")
+        return 
     }
 }
 async function cadastrarfuncionario(){
     try{
        let nome = prompt ("Insiral o nome do funcionário")
+        if (!nome){
+            console.log("Nome Inválido!")
+        }
        let cpf= prompt ("Insira o CPF do funcionário") 
        const checkquery = 'select id from "GymControl".funcionarios where cpf = $1'
         const resultcheck= await pool.query(checkquery,[cpf])
@@ -176,12 +221,17 @@ async function cadastrarfuncionario(){
             return 
         }
        let data= prompt ("Insira a data de nascimento do funcionário")
+        if (!data){
+            console.log("Data Inválida!")
+        }
        let funcao= prompt ("Qual a função do funcionário?")
+        if (!funcao){
+            console.log("Função inválida!")
+        }
        let numero= prompt ("Insira o numero de celular do funcionário")
        let email= prompt ("Insira o email do funcionário")
        const query = 'INSERT INTO "GymControl".funcionarios(nome, cpf, data_nascimento, funcao, numero_celular, email) VALUES ( $1, $2, $3, $4, $5, $6);'
        const result = await pool.query(query,[nome, cpf, data, funcao, numero, email])
-       console.table (result.rows) 
        console.log ("Funcionário cadastrado com sucesso")
 
     }catch {
@@ -308,6 +358,7 @@ async function cadastrarservico(){
         let funcionario = await procurarfuncionario(false)
             if (!funcionario){
                 console.log("Não é possivel cadastrar um serviço cujo funcionário é inexistente!")
+                return
             }
         let tipo= prompt ("Qual o tipo do serviço?")
             if (!tipo){
@@ -319,14 +370,8 @@ async function cadastrarservico(){
                 console.log("A data do serviço não pode ser vazia")
                 return
             }
-        let valor = parseInt(prompt ("Qual o valor do serviço"))
-            if (!valor){
-                console.log ("O serviço deve ter um valor!")
-                return
-            }
-        const query = 'INSERT INTO "GymControl".servicos( "id_funcionário", id_cliente, tipo_servico, data_servico, valor) VALUES ( $1, $2, $3, $4, $5)'
-        const result = await pool.query(query,[cliente, funcionario, tipo, data, valor])
-        console.table (result.rows)
+        const query = 'INSERT INTO "GymControl".servicos( "id_funcionário", id_cliente, tipo_servico, data_servico) VALUES ( $1, $2, $3, $4)'
+        const result = await pool.query(query,[funcionario, cliente, tipo, data])
         console.log ("Serviço cadastrado com sucesso!")
 
     }catch {
@@ -372,7 +417,6 @@ async function atualizarpagamento(){
         }
         const query = `update "GymControl".pagamentos set ${coluna}=$1 where id=$2`
         const result = await pool.query(query,[registro, id])
-        console.table (result.rows)
         console.log ("O pagamento foi atualizado!")
     }
     catch{
@@ -430,7 +474,6 @@ async function adicionarpagamento(){
          }
         const query = 'INSERT INTO "GymControl".pagamentos( id_servico, valor_total, forma_pagamento) VALUES ( $1, $2, $3)'
         const result = await pool.query(query,[servico, valor, pagamento])
-        console.table (result.rows)
         console.log ("Pagamento adicionado!!")
     }
     catch{
@@ -550,7 +593,7 @@ async function vsplanos(){
 
 async function inadimplentes(){
     try{
-        const query = 'SELECT clientes.nome, servicos.tipo_servico, servicos.valor  FROM "GymControl".clientes JOIN "GymControl".servicos ON clientes.id = servicos.id_cliente LEFT JOIN "GymControl".pagamentos ON servicos.id = pagamentos.id_servico WHERE pagamentos.id_servico IS NULL;'
+        const query = 'SELECT clientes.nome, servicos.tipo_servico FROM "GymControl".clientes JOIN "GymControl".servicos ON clientes.id = servicos.id_cliente LEFT JOIN "GymControl".pagamentos ON servicos.id = pagamentos.id_servico WHERE pagamentos.id_servico IS NULL;'
         const result = await pool.query(query)
         console.table (result.rows)
     }
@@ -565,7 +608,8 @@ async function deletar(){
     console.log("2- Deletar funcionário");
     console.log("3- Deletar serviço");
     console.log("4- Deletar pagamento");
-    console.log("5- Retornar ao menu principal");
+    console.log("5- Deletar agendamento")
+    console.log("6- Retornar ao menu principal");
     let opcao = parseInt(prompt("Selecione uma das opções"))
     switch (opcao){
         case 1:
@@ -581,6 +625,9 @@ async function deletar(){
             await deletarpagamento()
             return deletar()
         case 5:
+            await deletaragendamento()
+            return deletar()
+        case 6:
             console.log ("Retornando ao menu principal")
             return
         default:
