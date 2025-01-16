@@ -35,9 +35,10 @@ async function atualizarcliente(){
         if (resultcheck.rows.length <= 0 || !id){
             console.log ("Não é possivel acessar um cliente inexistente")
             return
-        }
-        let coluna= prompt("O que deseja atualizar?")
+        } 
         const colunasPermitidas = ['nome', 'email', 'numero_celular', 'plano_id']; 
+        console.log ("Estas são as colunas permitidas:", colunasPermitidas)
+        let coluna= prompt("O que deseja atualizar?")
         if (!colunasPermitidas.includes(coluna)) {
             console.log("Coluna inválida ou não permitida!");
             return;
@@ -57,7 +58,7 @@ async function atualizarcliente(){
 }
 async function vsclientes(){
     try{
-        const query = 'select * from "GymControl".clientes'
+        const query = 'select clientes.nome, cpf, data_nascimento, planos.nome as plano , numero_celular, email from "GymControl".clientes join "GymControl".planos on planos.id = clientes.plano_id'
         const result = await pool.query(query)
         console.table(result.rows)
     }
@@ -247,8 +248,9 @@ async function atualizarfuncionario(){
                 console.log ("Funcionário inexistente!")
                 return
             }
-            let coluna= prompt("O que deseja atualizar?")
             const colunasPermitidas = ['nome', 'email', 'numero_celular', 'funcao']; 
+            console.log ("Estas são as colunas permitidas:", colunasPermitidas)
+            let coluna= prompt("O que deseja atualizar?") 
             if (!colunasPermitidas.includes(coluna)) {
             console.log("Coluna inválida ou não permitida!");
             return;
@@ -286,36 +288,53 @@ async function deletarservico(){
         console.log("Erro ao deletar o serviço")
     }
 }
-async function atualizarservico(){
-    try{
-        let id= await procurarservico(false)
-        const checkquery= 'select id from "GymControl".servicos where id = $1'
-        const resultcheck= await pool.query(checkquery,[id])
-         if (!id || resultcheck.rows.length <=0){
-            console.log ("Serviço inexistente!")
-            return
-         }
-        let coluna= prompt("O que deseja atualizar?")
-        const colunasPermitidas = ['tiposervico', 'data_servico', 'valor']
-        if (!colunasPermitidas.includes(coluna)) {
-            console.log("Coluna inválida ou não permitida!");
+async function atualizarservico() {
+    try {
+        let id = await procurarservico(false)
+        if (!id) {
+            console.log("Serviço inexistente!")
             return;
         }
-        let registro = prompt ("Para o que deseja atualizar?")
-        if (!coluna || !registro){
-            console.log ("Não é possivel acessar ou gravar registros invalidos!")
+        const colunasPermitidas = ['tipo_servico', 'data_servico', 'id_cliente', 'id_funcionario']
+        console.log("Estas são as colunas permitidas:", colunasPermitidas)
+
+        let coluna = prompt("O que deseja atualizar?")
+        if (!colunasPermitidas.includes(coluna)) {
+            console.log("Coluna inválida ou não permitida!")
+            return;
         }
-        const query = `update "GymControl".servicos set ${coluna} =$1 where id = $2`
-        const result = pool.query(query,[registro, id])
-        console.log ("O serviço foi atualizado!")
-    }
-    catch {
-        console.log ("Erro ao atualizar o serviço")
+        let registro;
+        if (coluna === 'id_cliente') {
+            registro = await procurarcliente(false)
+            if (!registro) {
+                console.log("Cliente não encontrado!")
+                return;
+            }
+        } else if (coluna === 'id_funcionario') {
+            registro = await procurarfuncionario(false)
+            if (!registro) {
+                console.log("Funcionário não encontrado!")
+                return;
+            }
+        } else {
+            registro = prompt("Para o que deseja atualizar?")
+            if (!registro) {
+                console.log("Registro inválido!")
+                return
+            }
+        }
+        const query = `UPDATE "GymControl".servicos SET ${coluna} = $1 WHERE id = $2`
+        await pool.query(query, [registro, id])
+        console.log("O serviço foi atualizado com sucesso!")
+
+    } catch (error) {
+        console.error("Erro ao atualizar o serviço")
     }
 }
+
 async function vsservicos(){
     try{
-        const query = 'SELECT clientes.nome AS cliente, clientes.cpf as cpf_cliente, funcionarios.nome AS funcionario, servicos.tipo_servico, servicos.data_servico FROM "GymControl".servicos JOIN "GymControl".clientes ON clientes.id = servicos.id_cliente JOIN "GymControl".funcionarios ON funcionarios.id = servicos."id_funcionário";'
+        const query = 'SELECT clientes.nome AS cliente, clientes.cpf as cliente_cpf, funcionarios.nome AS funcionario, servicos.tipo_servico, servicos.data_servico FROM "GymControl".servicos JOIN "GymControl".clientes ON clientes.id = servicos.id_cliente JOIN "GymControl".funcionarios ON funcionarios.id = servicos.id_funcionário order by cliente ASC'
         const result = await pool.query(query)
         console.table(result.rows)
     }
@@ -330,7 +349,7 @@ async function procurarservico(mostrartabela=true){
                 console.log ("Serviço inexistente!")
                 return
             }
-        const query = 'select  servicos.* from "GymControl".servicos join "GymControl".clientes on servicos.id_cliente = clientes.id where clientes.id = $1'
+        const query = 'select  servicos.* from "GymControl".servicos join "GymControl".clientes on servicos.id_cliente = clientes.id where clientes.id = $1 '
         const result = await pool.query(query,[id])
             if (result.rows.length <=0){
                 console.log("O cliente não solicitou/realizou um serviço")
@@ -370,7 +389,7 @@ async function cadastrarservico(){
                 console.log("A data do serviço não pode ser vazia")
                 return
             }
-        const query = 'INSERT INTO "GymControl".servicos( "id_funcionário", id_cliente, tipo_servico, data_servico) VALUES ( $1, $2, $3, $4)'
+        const query = 'INSERT INTO "GymControl".servicos( "id_funcionario", id_cliente, tipo_servico, data_servico) VALUES ( $1, $2, $3, $4)'
         const result = await pool.query(query,[funcionario, cliente, tipo, data])
         console.log ("Serviço cadastrado com sucesso!")
 
@@ -405,8 +424,10 @@ async function atualizarpagamento(){
             console.log ("Pagamento inexistente!")
             return
          }
+        const colunasPermitidas = ['forma_pagamento'];
+        console.log ("Estas são as colunas permitidas:", colunasPermitidas)
         let coluna= prompt("O que deseja atualizar?")
-        const colunasPermitidas = ['forma_pagamento']; 
+         
         if (!colunasPermitidas.includes(coluna)) {
             console.log("Coluna inválida ou não permitida!");
             return;
@@ -484,7 +505,7 @@ async function adicionarpagamento(){
 //Funções para os agendamentos
 async function vsagendamentos(){
     try{
-        const query = 'select agendamentos.id, cliente_id, clientes.nome as cliente, funcionario_id, funcionarios.nome as funcionario, agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.cliente_id = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.funcionario_id'
+        const query = 'select agendamentos.id, clientes.nome as cliente, funcionarios.nome as funcionario, agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.id_cliente = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.id_funcionario'
         const result = await pool.query(query)
         console.table(result.rows)
     }
@@ -494,12 +515,20 @@ async function vsagendamentos(){
     }
 }
 
-async function procuraragendamento(){
+async function procuraragendamento(mostrartabela=true){
     try{
         let id = await procurarcliente(false)
-        const query = 'select agendamentos.id,  clientes.nome as cliente,funcionarios.nome as funcionario, agendamentos.data_agendamento, agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.cliente_id = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.funcionario_id where clientes.id = $1'
+            if (!id){
+                console.log("Cliente inexistente!")
+                return
+            }
+        const query = 'select agendamentos.id,  clientes.nome as cliente,funcionarios.nome as funcionario,  agendamentos.data_marcada, agendamentos.tipo from "GymControl".agendamentos join "GymControl".clientes  on agendamentos.id_cliente = clientes.id join  "GymControl".funcionarios on funcionarios.id = agendamentos.id_funcionario where clientes.id = $1'
         const result = await pool.query(query,[id])
-        console.table (result.rows)
+            if (mostrartabela){
+                console.table (result.rows)
+                return 
+            }
+            return result.rows[0].id
     }
     catch{
         console.log ("Não foi possivel procurar o agendamento")
@@ -528,7 +557,7 @@ async function cadastraragendamento(){
                 console.log("Serviço inválido!")
                 return
             }
-        const query = 'INSERT INTO "GymControl".agendamentos ( cliente_id, funcionario_id,  data_marcada, tipo) VALUES ( $1, $2, $3, $4);'
+        const query = 'INSERT INTO "GymControl".agendamentos ( id_cliente, id_funcionario,  data_marcada, tipo) VALUES ( $1, $2, $3, $4);'
         const result = await pool.query(query,[cliente, funcionario, datamarcada, tipo])
     }
     catch{
@@ -538,22 +567,41 @@ async function cadastraragendamento(){
 
 async function atualizaragendamento(){
     try{
-        let cliente = await procurarcliente(false)
-            if (!cliente){
-                console.log ("Cliente não encontrado!")
+        let id = await procuraragendamento(false)
+            if (!id){
+                console.log ("Agendamento não encontrado")
                 return
             }
-        let coluna= prompt ("O que deseja atualizar?")
-        const colunasPermitidas = ['data_marcada', 'tipo']; 
-        if (!colunasPermitidas.includes(coluna)) {
-            console.log("Coluna inválida ou não permitida!");
-            return;
-        }
-        let registro = prompt ("Para o que deseja atualizar?")
-        const query = `update "GymControl".agendamentos set ${coluna}= $1 where cliente_id= $2`
-        const result = await pool.query(query,[registro, cliente])
-        console.log ("Agendamento atualizado com sucesso")
-
+            const colunasPermitidas = ['data_marcada', 'tipo', 'id_cliente', 'id_funcionario']; 
+            console.log("Estas são as colunas permitidas:", colunasPermitidas)
+            let coluna = prompt("O que deseja atualizar?")
+            if (!colunasPermitidas.includes(coluna)) {
+                console.log("Coluna inválida ou não permitida!")
+                return;
+            }
+            let registro;
+            if (coluna === 'id_cliente') {
+                registro = await procurarcliente(false)
+                if (!registro) {
+                    console.log("Cliente não encontrado!")
+                    return;
+                }
+            } else if (coluna === 'id_funcionario') {
+                registro = await procurarfuncionario(false)
+                if (!registro) {
+                    console.log("Funcionário não encontrado!")
+                    return;
+                }
+            } else {
+                registro = prompt("Para o que deseja atualizar?")
+                if (!registro) {
+                    console.log("Registro inválido!")
+                    return
+                }
+            }
+            const query = `UPDATE "GymControl".agendamentos SET ${coluna} = $1 WHERE id = $2`
+            await pool.query(query, [registro, id])
+            console.log("O serviço foi atualizado com sucesso!")
     }
     catch{
         console.log("Erro ao atualizar o agendamento")
@@ -563,13 +611,13 @@ async function atualizaragendamento(){
 async function deletaragendamento(){
     try{
         let cliente = procurarcliente(false)
-        const checkquery= 'select id from "GymControl".agendamentos where cliente_id = $1'
+        const checkquery= 'select id from "GymControl".agendamentos where id_cliente = $1'
         const resultcheck= await pool.query(checkquery,[cliente])
             if (!id || resultcheck.rows.length <=0){
             console.log ("Agendamento inexistente!")
             return
             }
-        const query = 'delete  from "GymControl".agendamento where cliente_id = $1'
+        const query = 'delete  from "GymControl".agendamento where id_cliente = $1'
         const result = await pool.query(query,[cliente])
         console.log ("Agendamento deletado com sucesso!")
         
@@ -591,6 +639,32 @@ async function vsplanos(){
     }
 }
 
+async function procurarplano(mostrartabela=true){
+    try{
+        let nome= prompt("Qual o nome do plano? ")
+            if (!nome){
+                console.log("Deve existir um nome para procurar o plano!")   
+            }
+        const checkquery= 'select id from "GymControl".planos where nome = $1'
+        const resultcheck= await pool.query(checkquery,[nome])
+            if (resultcheck.rows.length <=0){
+                console.log ("Plano inexistente!")
+                return
+            }    
+        const query= 'SELECT * from "GymControl".planos where nome = $1'
+        const result = await pool.query(query,[nome])
+        if (mostrartabela){
+            console.table (result.rows)
+            return
+        }    
+        return result.rows[0].id
+
+    }
+    catch{
+        console.log("Erro ao procurar o plano!")
+    }
+}
+
 async function inadimplentes(){
     try{
         const query = 'SELECT clientes.nome, servicos.tipo_servico FROM "GymControl".clientes JOIN "GymControl".servicos ON clientes.id = servicos.id_cliente LEFT JOIN "GymControl".pagamentos ON servicos.id = pagamentos.id_servico WHERE pagamentos.id_servico IS NULL;'
@@ -604,7 +678,7 @@ async function inadimplentes(){
 
 //Funções para os menus 
 async function deletar(){
-    console.log("-----MENU DE DELETAR-----")
+    console.log ("-----MENU DE DELETAR----- ")
     console.log("1- Deletar cliente");
     console.log("2- Deletar funcionário");
     console.log("3- Deletar serviço");
@@ -765,7 +839,8 @@ console.log("2- Procurar funcionário");
 console.log("3- Procurar serviço");
 console.log("4- Procurar pagamento");
 console.log("5- Procurar agendamento")
-console.log("6- Retornar ao menu principal");
+console.log("6- Procurar planos")
+console.log("7- Retornar ao menu principal");
 
 let opcao = parseInt(prompt("Selecione uma das opções"))
 
@@ -785,7 +860,10 @@ switch (opcao) {
     case 5: 
         await procuraragendamento()
         return procurar()
-    case 6:
+    case 6: 
+        await procurarplano()
+        return procurar()
+    case 7:
         console.log("Retornando ao menu principal")
         return
     default:
@@ -828,5 +906,4 @@ async function menu() {
 
     }   
 } 
-
 menu()
