@@ -23,4 +23,13 @@ export class FuncionarioService {
             return lista;
         }
     }
-}
+    async inserirFuncionario(nome: string, cpf: string, data_nascimento: Date, funcao: string, numero_celular: string, email:string){
+        const regex= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailValido= regex.test(email)
+        if (!emailValido){
+            throw new Error("Email Invalido zé!!!!!!!!!!")
+        }
+        await this.repo.inserirFuncionario(nome, cpf, data_nascimento, funcao, numero_celular, email)
+    }
+ 
+}   

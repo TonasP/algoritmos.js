@@ -31,4 +31,10 @@ export class FuncionarioRepository {
         }
         return listaFuncionarios
     }
+    async inserirFuncionario(nome: string, cpf: string, data_nascimento: Date, funcao: string, numero_celular: string, email:string){
+        const query = `INSERT INTO "GymControl".funcionarios
+        (nome, cpf, data_nascimento, funcao, numero_celular, email)
+	    VALUES ($1, $2, $3, $4, $5, $6)`
+        await this.pool.query(query,[nome, cpf, data_nascimento, funcao, numero_celular, email])
+    }
 }

@@ -26,6 +26,5 @@ export class ClienteRepository{
        
         return listaClientes;
     }
- 
- 
+   
 }
